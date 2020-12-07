@@ -1,15 +1,17 @@
-Patatap Vanilla ES6
+Patatap
 ===
 
-My Vanilla (ES6) version of Patatap - animation and sound kit. 
+My version of Patatap - animation and sound kit.
 
 In simple words, the keyboards of your PC, from A to Z, can compose live real musical animations.
 
 ### Built With
 
- -  [Javascript] (https://www.javascript.com/) - High-level, interpreted programming language
  -  [HTML] (https://www.html.com/) - Standard markup language
  -  [CSS] (https://css.com) - Style sheet language
+ -  [Javascript] (https://www.javascript.com/) - High-level, interpreted programming language
+ -  [PixiJS] (https://www.pixijs.com/) - A 2D webGL renderer with a seamless canvas fallback that enables it to work across all modern browsers both desktop and mobile
+ -  [GSAP] (https://greensock.com/gsap/) - An industry standard JavaScript animation library
 
 ### Credits & Inspirations
 
