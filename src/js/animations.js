@@ -93,7 +93,6 @@ class wipe {
         shape.beginFill(color);
         shape.drawRect(rx, ry, renderer.width, renderer.height);
         shape.endFill();
-        shape.visible = false;
 
         container.addChild(shape);
     }
@@ -109,32 +108,28 @@ class wipe {
             this.tween.kill();
             clear();
         }
-        container.position.x = 0;
-        container.position.y = 0;
 
         const tweenIn = {ease: Expo.easeOut, onComplete: animationOut};
         const tweenOut = {ease: Expo.easeIn, onComplete: clear};
         if (axis == 'x') {
             shape.x = direction? (-renderer.width / 2): (renderer.width * 1.5);
-            tweenIn.x = direction? (renderer.width): (-renderer.width);
-            tweenOut.x = direction? (renderer.width * 2): (-renderer.width * 2);
+            tweenIn.x = renderer.width / 2;
+            tweenOut.x = direction? (renderer.width * 1.5): (-renderer.width / 2);
         }
         else {
             shape.y = direction? (-renderer.height / 2): (renderer.height * 1.5);
-            tweenIn.y = direction? (renderer.height): (-renderer.height);
-            tweenOut.y = direction? (renderer.height * 2): (-renderer.height * 2);
+            tweenIn.y = renderer.height / 2;
+            tweenOut.y = direction? (renderer.height * 1.5): (-renderer.height / 2);
         }
 
-        shape.visible = true;
         stage.addChild(container);
-        this.tween = TweenLite.to(container.position, 0.5, tweenIn);
+        this.tween = TweenLite.to(shape.position, 0.5, tweenIn);
         function animationOut(){
-            self.tween = TweenLite.to(container.position, 0.5, tweenOut);
+            self.tween = TweenLite.to(shape.position, 0.5, tweenOut);
         };
         function clear(){
             self.tween = undefined;
             stage.removeChild(container);
-            shape.visible = false;
         };
     }
 }
