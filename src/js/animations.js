@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from './pixi-legacy.mjs';
-import { TweenLite } from "./gsap-core.js";
+import { TweenLite, Expo } from "./gsap-core.js";
 
 const COLORS = {
     background: {r: 181, g: 181, b: 181, hex: 0xb5b5b5},
@@ -28,6 +28,8 @@ export default class Animations {
         renderer.backgroundColor = COLORS.background.hex;
 
         this.flash = new flash();
+        this.veil = new wipe('y');
+        this.wipe = new wipe('x');
     }
 
     play({key}) {
@@ -35,6 +37,8 @@ export default class Animations {
             case 'q': this.flash.play(0); break;
             case 'a': this.flash.play(1); break;
             case 'z': this.flash.play(2); break;
+            case 's': this.veil.play(); break;
+            case 'x': this.wipe.play(); break;
         }
     }
 }
@@ -45,7 +49,6 @@ class flash {
         const shapes = this.shapes = [];
         this.colors = [COLORS.black.hex, COLORS.white.hex, COLORS.accent.hex];
 
-        stage.addChild(container);
         for (let i = 0; i < 3; i++) {
             shapes[i] = new Graphics();
             shapes[i].beginFill(this.colors[i]);
@@ -57,7 +60,10 @@ class flash {
     }
 
     play(id) {
+        const container = this.container;
         const shape = this.shapes[id];
+
+        stage.addChild(container);
         const animation = () => {
             shape.visible = Math.random() > 0.5;
         };
@@ -65,6 +71,66 @@ class flash {
         TweenLite.delayedCall(0.25, () => {
             app.ticker.remove(animation);
             shape.visible = false;
+            stage.removeChild(this.container);
         });
+    }
+}
+
+class wipe {
+    constructor(axis) {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        const center = this.center = {x: renderer.width / 2, y: renderer.height / 2};
+        const color = axis == 'x' ? COLORS.middleground.hex: COLORS.highlight.hex;
+        const rx = axis == 'x' ? (-center.x): 0;
+        const ry = axis == 'x' ? 0: (-center.y);
+        this.axis = axis;
+
+        shape.beginFill(color);
+        shape.drawRect(rx, ry, renderer.width, renderer.height);
+        shape.endFill();
+        shape.visible = false;
+
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+        const container = this.container;
+        const shape = this.shape;
+        const axis = this.axis;
+        const direction = Math.random() > 0.5;
+
+        if (this.tween) {
+            this.tween.kill();
+            clear();
+        }
+        container.position.x = 0;
+        container.position.y = 0;
+
+        const tweenIn = {ease: Expo.easeOut, onComplete: animationOut};
+        const tweenOut = {ease: Expo.easeIn, onComplete: clear};
+        if (axis == 'x') {
+            shape.x = direction? (-renderer.width / 2): (renderer.width * 1.5);
+            tweenIn.x = direction? (renderer.width): (-renderer.width);
+            tweenOut.x = direction? (renderer.width * 2): (-renderer.width * 2);
+        }
+        else {
+            shape.y = direction? (-renderer.height / 2): (renderer.height * 1.5);
+            tweenIn.y = direction? (renderer.height): (-renderer.height);
+            tweenOut.y = direction? (renderer.height * 2): (-renderer.height * 2);
+        }
+
+        shape.visible = true;
+        stage.addChild(container);
+        this.tween = TweenLite.to(container.position, 0.5, tweenIn);
+        function animationOut(){
+            self.tween = TweenLite.to(container.position, 0.5, tweenOut);
+        };
+        function clear(){
+            self.tween = undefined;
+            stage.removeChild(container);
+            shape.visible = false;
+        };
     }
 }
