@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from './pixi-legacy.mjs';
-import { TweenLite, Expo } from "./gsap-core.js";
+import { TweenLite, Expo, Sine} from "./gsap-core.js";
 
 const COLORS = {
     background: {r: 181, g: 181, b: 181, hex: 0xb5b5b5},
@@ -30,6 +30,7 @@ export default class Animations {
         this.flash = new flash();
         this.veil = new wipe('y');
         this.wipe = new wipe('x');
+        this.pistons = [new piston(0), new piston(1), new piston(2)];
     }
 
     play({key}) {
@@ -39,6 +40,9 @@ export default class Animations {
             case 'z': this.flash.play(2); break;
             case 's': this.veil.play(); break;
             case 'x': this.wipe.play(); break;
+            case 'r': this.pistons[0].play(); break;
+            case 'f': this.pistons[1].play(); break;
+            case 'v': this.pistons[2].play(); break;
         }
     }
 }
@@ -131,6 +135,67 @@ class wipe {
             self.tween = undefined;
             stage.removeChild(container);
             shape.visible = false;
+        };
+    }
+}
+
+class piston {
+    constructor(id) {
+        const container = this.container = new Container();
+        const shapes = this.shapes = [];
+        const color = this.color = COLORS.white.hex;
+
+        const amount = id * 4 + 1;
+        const width = this.width = renderer.width * 0.75;
+        const height = this.height = renderer.height * 0.5;
+
+        const mask = this.mask = new Graphics();
+        mask.beginFill(COLORS.black.hex, 1);
+        mask.drawRect(width / 6, height / 2, width, height);
+        mask.endFill();
+        container.addChild(mask);
+        mask.position.x = width + 1;
+
+        for (let i = 0; i < amount; i++) {
+            const h = height / amount - height / (amount * 3);
+            const x = renderer.width * 0.25 / 2;
+            const y = height / 2 + (i + 1) * (height / (amount + 1)) - height / (amount * 3);
+
+            shapes[i] = new Graphics();
+            shapes[i].beginFill(color);
+            shapes[i].drawRect(x, y, width, h);
+            shapes[i].endFill();
+            shapes[i].mask = mask;
+            container.addChild(shapes[i]);
+        }
+    }
+
+    play() {
+        const self = this;
+        const container = this.container;
+        const mask = this.mask;
+        const direction = Math.random() > 0.5;
+        const x = this.width + 1;
+
+        if (this.tween) {
+            this.tween.kill();
+            clear();
+        }
+        mask.position.x = direction? x: -x;
+
+        const tweenIn = {ease: Sine.easeOut, onComplete: animationOut};
+        const tweenOut = {ease: Sine.easeOut, onComplete: clear};
+        tweenIn.x = 0;
+        tweenOut.x = direction? -x: x;
+
+        stage.addChild(container);
+        this.tween = TweenLite.to(mask.position, 0.125, tweenIn);
+        function animationOut(){
+            self.tween = TweenLite.to(mask.position, 0.125, tweenOut);
+        };
+        function clear(){
+            self.tween = undefined;
+            stage.removeChild(container);
         };
     }
 }
