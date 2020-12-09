@@ -30,6 +30,7 @@ export default class Animations {
         this.flashes = [new flash(0), new flash(1), new flash(2)];
         this.veil = new wipe('y');
         this.wipe = new wipe('x');
+        this.moon = new moon();
         this.ufo = new ufo();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
     }
@@ -41,6 +42,7 @@ export default class Animations {
             case 'z': this.flashes[2].play(); break;
             case 's': this.veil.play(); break;
             case 'x': this.wipe.play(); break;
+            case 'e': this.moon.play(); break;
             case 'd': this.ufo.play(); break;
             case 'r': this.pistons[0].play(); break;
             case 'f': this.pistons[1].play(); break;
@@ -150,6 +152,99 @@ class wipe {
 
     clear() {
         this.tween = undefined;
+        stage.removeChild(this.container);
+    }
+}
+
+class moon {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        this.color = COLORS.foreground.hex;
+
+        const radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 0.33;
+        const amount = this.amount = 42;
+        this.halfAmount = amount / 2;
+
+        this.points = [...Array(amount).keys()].map(i => {
+            const pct = i / (amount - 1);
+            const theta = pct * Math.PI * 2;
+            return {
+                x: radius * Math.cos(theta),
+                y: radius * Math.sin(theta)
+            };
+        });
+
+        shape.x = renderer.width / 2;
+        shape.y = renderer.height / 2;
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+        const amount = this.amount;
+        const halfAmount = this.halfAmount;
+
+        this.reset();
+
+        const current = this.current;
+        const destinations = this.destinations;
+        const options = {beginning: 0, ending: 0};
+
+        this.tween = TweenLite.to(options, 0.5, {
+            beginning: 1.0,
+            ease: Sine.easeOut,
+            onUpdate: function() {
+                const t = this.totalTime() * 2;
+                for (let i = halfAmount; i < amount; i++)
+                    current[i].y = lerp(current[i].y, destinations[i].y, t);
+                self.redraw(current);
+            },
+            onComplete: animationOut
+        });
+
+        function animationOut(){
+            self.tween = TweenLite.to(options, 0.5, {
+                ending: 1.0,
+                ease: Sine.easeOut,
+                onUpdate: function() {
+                    const t = this.totalTime() * 2;
+                    for (let i = 0; i < halfAmount; i++)
+                        current[i].y = lerp(current[i].y, -(destinations[i].y), t);
+                    self.redraw(current);
+                },
+                onComplete: self.clear
+            });
+        };
+    }
+
+    redraw(points) {
+        const shape = this.shape;
+        shape.clear();
+        shape.beginFill(this.color);
+        shape.drawPolygon(points);
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.current = this.points.map(p => ({
+            x: p.x,
+            y: Math.abs(p.y)
+        }));
+        this.destinations = this.points.slice();
+        this.shape.rotation = Math.random() * Math.PI * 2;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
         stage.removeChild(this.container);
     }
 }
@@ -270,4 +365,8 @@ class piston {
         this.tween = undefined;
         stage.removeChild(this.container);
     }
+}
+
+function lerp(min, max, fraction){
+    return (max - min) * fraction + min;
 }
