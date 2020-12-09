@@ -27,7 +27,7 @@ export default class Animations {
         window.onresize = () => renderer.resize(window.innerWidth, window.innerHeight);
         renderer.backgroundColor = COLORS.background.hex;
 
-        this.flash = new flash();
+        this.flashes = [new flash(0), new flash(1), new flash(2)];
         this.veil = new wipe('y');
         this.wipe = new wipe('x');
         this.ufo = new ufo();
@@ -36,9 +36,9 @@ export default class Animations {
 
     play({key}) {
         switch(key) {
-            case 'q': this.flash.play(0); break;
-            case 'a': this.flash.play(1); break;
-            case 'z': this.flash.play(2); break;
+            case 'q': this.flashes[0].play(); break;
+            case 'a': this.flashes[1].play(); break;
+            case 'z': this.flashes[2].play(); break;
             case 's': this.veil.play(); break;
             case 'x': this.wipe.play(); break;
             case 'd': this.ufo.play(); break;
@@ -50,35 +50,44 @@ export default class Animations {
 }
 
 class flash {
-    constructor() {
+    constructor(id) {
         const container = this.container = new Container();
-        const shapes = this.shapes = [];
-        this.colors = [COLORS.black.hex, COLORS.white.hex, COLORS.accent.hex];
+        const shape = this.shape = new Graphics();
+        const colors = [COLORS.black.hex, COLORS.white.hex, COLORS.accent.hex];
 
-        for (let i = 0; i < 3; i++) {
-            shapes[i] = new Graphics();
-            shapes[i].beginFill(this.colors[i]);
-            shapes[i].drawRect(0, 0, renderer.width, renderer.height);
-            shapes[i].endFill();
-            shapes[i].visible = false;
-            container.addChild(shapes[i]);
-        }
+        shape.beginFill(colors[id]);
+        shape.drawRect(0, 0, renderer.width, renderer.height);
+        shape.endFill();
+        shape.visible = false;
+        container.addChild(shape);
     }
 
-    play(id) {
-        const container = this.container;
-        const shape = this.shapes[id];
+    play() {
+        const shape = this.shape;
+        this.reset();
 
-        stage.addChild(container);
-        const animation = () => {
+        const animation = this.animation = () => {
             shape.visible = Math.random() > 0.5;
         };
         app.ticker.add(animation);
         TweenLite.delayedCall(0.25, () => {
-            app.ticker.remove(animation);
-            shape.visible = false;
-            stage.removeChild(this.container);
+            this.clear();
         });
+    }
+
+    reset() {
+        if (this.animation)
+            this.clear();
+
+        this.shape.visible = false;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        app.ticker.remove(this.animation);
+        this.shape.visible = false;
+        stage.removeChild(this.container);
+        this.animation = undefined;
     }
 }
 
@@ -104,35 +113,44 @@ class wipe {
         const container = this.container;
         const shape = this.shape;
         const axis = this.axis;
-        const direction = Math.random() > 0.5;
 
-        if (this.tween) {
-            this.tween.kill();
-            clear();
-        }
+        this.reset();
 
         const tweenIn = {ease: Expo.easeOut, onComplete: animationOut};
-        const tweenOut = {ease: Expo.easeIn, onComplete: clear};
+        const tweenOut = {ease: Expo.easeIn, onComplete: this.clear};
         if (axis == 'x') {
-            shape.x = direction? (-renderer.width / 2): (renderer.width * 1.5);
             tweenIn.x = renderer.width / 2;
-            tweenOut.x = direction? (renderer.width * 1.5): (-renderer.width / 2);
+            tweenOut.x = this.direction? (renderer.width * 1.5): (-renderer.width / 2);
         }
         else {
-            shape.y = direction? (-renderer.height / 2): (renderer.height * 1.5);
             tweenIn.y = renderer.height / 2;
-            tweenOut.y = direction? (renderer.height * 1.5): (-renderer.height / 2);
+            tweenOut.y = this.direction? (renderer.height * 1.5): (-renderer.height / 2);
         }
 
-        stage.addChild(container);
         this.tween = TweenLite.to(shape.position, 0.5, tweenIn);
         function animationOut(){
             self.tween = TweenLite.to(shape.position, 0.5, tweenOut);
         };
-        function clear(){
-            self.tween = undefined;
-            stage.removeChild(container);
-        };
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const axis = this.axis;
+        const direction = this.direction = Math.random() > 0.5;
+        if (axis == 'x')
+            this.shape.x = direction? (-renderer.width / 2): (renderer.width * 1.5);
+        else
+            this.shape.y = direction? (-renderer.height / 2): (renderer.height * 1.5);
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        stage.removeChild(this.container);
     }
 }
 
@@ -155,29 +173,35 @@ class ufo {
         const container = this.container;
         const shape = this.shape;
 
-        if (this.tween) {
-            this.tween.kill();
-            clear();
-        }
-
-        const right = Math.random() > 0.5;
-        const top = Math.random() > 0.5;
-        shape.x = right ? (renderer.width * 0.75): (renderer.width * 0.25);
-        shape.y = top ? (-renderer.height * 0.5): (renderer.height * 1.5);
-        shape.scale.set(1.0);
-        stage.addChild(container);
+        this.reset();
 
         const tweenIn = {y: renderer.height / 2, ease: Circ.easeOut, onComplete: animationOut};
-        const tweenOut = {x: 0, y: 0, ease: Circ.easeOut, onComplete: clear};
+        const tweenOut = {x: 0, y: 0, ease: Circ.easeOut, onComplete: this.clear};
 
         this.tween = TweenLite.to(shape, 0.5, tweenIn);
         function animationOut(){
             self.tween = TweenLite.to(shape.scale, 0.5, tweenOut);
         };
-        function clear(){
-            self.tween = undefined;
-            stage.removeChild(container);
-        };
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const shape = this.shape;
+        const right = Math.random() > 0.5;
+        const top = Math.random() > 0.5;
+        shape.x = right ? (renderer.width * 0.75): (renderer.width * 0.25);
+        shape.y = top ? (-renderer.height * 0.5): (renderer.height * 1.5);
+        shape.scale.set(1.0);
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        stage.removeChild(this.container);
     }
 }
 
@@ -216,28 +240,34 @@ class piston {
         const self = this;
         const container = this.container;
         const mask = this.mask;
-        const direction = Math.random() > 0.5;
-        const x = this.width + 1;
 
-        if (this.tween) {
-            this.tween.kill();
-            clear();
-        }
-        mask.position.x = direction? x: -x;
+        this.reset();
 
         const tweenIn = {ease: Sine.easeOut, onComplete: animationOut};
-        const tweenOut = {ease: Sine.easeOut, onComplete: clear};
+        const tweenOut = {ease: Sine.easeOut, onComplete: this.clear};
         tweenIn.x = 0;
-        tweenOut.x = direction? -x: x;
+        tweenOut.x = this.direction? -this.x: this.x;
 
-        stage.addChild(container);
         this.tween = TweenLite.to(mask.position, 0.125, tweenIn);
         function animationOut(){
             self.tween = TweenLite.to(mask.position, 0.125, tweenOut);
         };
-        function clear(){
-            self.tween = undefined;
-            stage.removeChild(container);
-        };
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const direction = this.direction = Math.random() > 0.5;
+        const x = this.x = this.width + 1;
+        this.mask.position.x = direction? x: -x;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        stage.removeChild(this.container);
     }
 }
