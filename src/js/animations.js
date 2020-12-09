@@ -32,6 +32,7 @@ export default class Animations {
         this.wipe = new wipe('x');
         this.moon = new moon();
         this.ufo = new ufo();
+        this.splits = new splits();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
     }
 
@@ -44,6 +45,7 @@ export default class Animations {
             case 'x': this.wipe.play(); break;
             case 'e': this.moon.play(); break;
             case 'd': this.ufo.play(); break;
+            case 'c': this.splits.play(); break;
             case 'r': this.pistons[0].play(); break;
             case 'f': this.pistons[1].play(); break;
             case 'v': this.pistons[2].play(); break;
@@ -297,6 +299,79 @@ class ufo {
     clear() {
         this.tween = undefined;
         stage.removeChild(this.container);
+    }
+}
+
+class splits {
+    constructor() {
+        const container = this.container = new Container();
+        const shapeTop = this.shapeTop = new Graphics();
+        const shapeBottom = this.shapeBottom = new Graphics();
+        const distance = this.distance = renderer.height / 6;
+
+        this.drawHalfCircle(shapeTop, Math.PI, 0);
+        this.drawHalfCircle(shapeBottom, 0, Math.PI);
+
+        container.addChild(shapeTop);
+        container.addChild(shapeBottom);
+        container.position.x = container.pivot.x = renderer.width / 2;
+        container.position.y = container.pivot.y = renderer.height / 2;
+    }
+
+    play() {
+        const self = this;
+        const shapeTop = this.shapeTop;
+        const shapeBottom = this.shapeBottom;
+
+        this.reset();
+
+        const options = {beginning: 0, ending: 0};
+        this.tween = TweenLite.to(options, 0.5, {
+            beginning: 1.0,
+            ease: Circ.easeIn,
+            onUpdate: function() {
+                const t = this.totalTime() * 2;
+                shapeTop.visible = shapeBottom.visible = Math.random() < t;
+            },
+            onComplete: animationOut
+        });
+
+        function animationOut(){
+            self.tween = TweenLite.to(options, 0.5, {
+                ending: 1.0,
+                ease: Circ.easeOut,
+                onUpdate: function() {
+                    const t = this.totalTime() * 2;
+                    shapeTop.y = - self.distance * t;
+                    shapeBottom.y = self.distance * t;
+                    shapeTop.alpha = shapeBottom.alpha = 1 - t;
+                },
+                onComplete: self.clear
+            });
+        };
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.container.rotation = Math.random() * Math.PI * 2;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        stage.removeChild(this.container);
+    }
+
+    drawHalfCircle(shape, startAngle, endAngle) {
+        const color = COLORS.foreground.hex;
+        const radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 0.33;
+        shape.beginFill(color);
+        shape.arc(renderer.width / 2, renderer.height / 2, radius, startAngle, endAngle);
+        shape.endFill;
     }
 }
 
