@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from './pixi-legacy.mjs';
-import { TweenLite, Expo, Sine} from "./gsap-core.js";
+import { TweenLite, Expo, Circ, Sine} from "./gsap-core.js";
 
 const COLORS = {
     background: {r: 181, g: 181, b: 181, hex: 0xb5b5b5},
@@ -30,6 +30,7 @@ export default class Animations {
         this.flash = new flash();
         this.veil = new wipe('y');
         this.wipe = new wipe('x');
+        this.ufo = new ufo();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
     }
 
@@ -40,6 +41,7 @@ export default class Animations {
             case 'z': this.flash.play(2); break;
             case 's': this.veil.play(); break;
             case 'x': this.wipe.play(); break;
+            case 'd': this.ufo.play(); break;
             case 'r': this.pistons[0].play(); break;
             case 'f': this.pistons[1].play(); break;
             case 'v': this.pistons[2].play(); break;
@@ -126,6 +128,51 @@ class wipe {
         this.tween = TweenLite.to(shape.position, 0.5, tweenIn);
         function animationOut(){
             self.tween = TweenLite.to(shape.position, 0.5, tweenOut);
+        };
+        function clear(){
+            self.tween = undefined;
+            stage.removeChild(container);
+        };
+    }
+}
+
+class ufo {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        const color = this.color = COLORS.accent.hex;
+
+        const radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 0.25;
+        shape.beginFill(color);
+        shape.drawCircle(0, 0, radius);
+        shape.endFill();
+
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+        const container = this.container;
+        const shape = this.shape;
+
+        if (this.tween) {
+            this.tween.kill();
+            clear();
+        }
+
+        const right = Math.random() > 0.5;
+        const top = Math.random() > 0.5;
+        shape.x = right ? (renderer.width * 0.75): (renderer.width * 0.25);
+        shape.y = top ? (-renderer.height * 0.5): (renderer.height * 1.5);
+        shape.scale.set(1.0);
+        stage.addChild(container);
+
+        const tweenIn = {y: renderer.height / 2, ease: Circ.easeOut, onComplete: animationOut};
+        const tweenOut = {x: 0, y: 0, ease: Circ.easeOut, onComplete: clear};
+
+        this.tween = TweenLite.to(shape, 0.5, tweenIn);
+        function animationOut(){
+            self.tween = TweenLite.to(shape.scale, 0.5, tweenOut);
         };
         function clear(){
             self.tween = undefined;
