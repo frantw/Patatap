@@ -121,7 +121,7 @@ class wipe {
         this.reset();
 
         const tweenIn = {ease: Expo.easeOut, onComplete: animationOut};
-        const tweenOut = {ease: Expo.easeIn, onComplete: this.clear};
+        const tweenOut = {ease: Expo.easeIn, onComplete: () => this.clear()};
         if (axis == 'x') {
             tweenIn.x = renderer.width / 2;
             tweenOut.x = this.direction? (renderer.width * 1.5): (-renderer.width / 2);
@@ -215,7 +215,7 @@ class moon {
                         current[i].y = lerp(current[i].y, -(destinations[i].y), t);
                     self.redraw(current);
                 },
-                onComplete: self.clear
+                onComplete: () => self.clear()
             });
         };
     }
@@ -273,7 +273,7 @@ class ufo {
         this.reset();
 
         const tweenIn = {y: renderer.height / 2, ease: Circ.easeOut, onComplete: animationOut};
-        const tweenOut = {x: 0, y: 0, ease: Circ.easeOut, onComplete: this.clear};
+        const tweenOut = {x: 0, y: 0, ease: Circ.easeOut, onComplete: () => this.clear()};
 
         this.tween = TweenLite.to(shape, 0.5, tweenIn);
         function animationOut(){
@@ -346,7 +346,7 @@ class splits {
                     shapeBottom.y = self.distance * t;
                     shapeTop.alpha = shapeBottom.alpha = 1 - t;
                 },
-                onComplete: self.clear
+                onComplete: () => self.clear()
             });
         };
     }
@@ -358,6 +358,8 @@ class splits {
         }
 
         this.container.rotation = Math.random() * Math.PI * 2;
+        this.shapeTop.y = this.shapeBottom.y = 0;
+        this.shapeTop.alpha = this.shapeBottom.alpha = 1;
         stage.addChild(this.container);
     }
 
@@ -414,7 +416,7 @@ class piston {
         this.reset();
 
         const tweenIn = {ease: Sine.easeOut, onComplete: animationOut};
-        const tweenOut = {ease: Sine.easeOut, onComplete: this.clear};
+        const tweenOut = {ease: Sine.easeOut, onComplete: () => this.clear()};
         tweenIn.x = 0;
         tweenOut.x = this.direction? -this.x: this.x;
 
