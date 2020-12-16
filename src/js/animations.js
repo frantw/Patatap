@@ -538,7 +538,7 @@ class bubbles {
     }
 
     draw(graphic, x, y) {
-        graphic.beginFill(this.colors);
+        graphic.beginFill(this.color);
         graphic.drawCircle(x, y, this.bubbleRadius);
         graphic.endFill();
     }
