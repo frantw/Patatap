@@ -34,6 +34,7 @@ export default class Animations {
         this.ufo = new ufo();
         this.splits = new splits();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
+        this.timer = new timer();
         this.bubbles = new bubbles();
     }
 
@@ -50,6 +51,7 @@ export default class Animations {
             case 'r': this.pistons[0].play(); break;
             case 'f': this.pistons[1].play(); break;
             case 'v': this.pistons[2].play(); break;
+            case 't': this.timer.play(); break;
             case 'g': this.bubbles.play(); break;
         }
     }
@@ -443,6 +445,72 @@ class piston {
     clear() {
         this.tween = undefined;
         stage.removeChild(this.container);
+    }
+}
+
+class timer {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+
+        container.pivot.x = container.pivot.y = 0;
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+        this.reset();
+
+        const direction = this.direction;
+        const twoPI = Math.PI * 2;
+        const options = {theta: direction? 0: twoPI * 2};
+        this.tween = TweenLite.to(options, 0.66, {
+            theta: direction? twoPI * 2: 0,
+            onUpdate: function() {
+                const theta = options.theta;
+                if (theta <= twoPI)
+                    self.redraw(0, theta);
+                else
+                    self.redraw(theta - twoPI, twoPI);
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.direction = Math.random() > 0.5;
+        this.container.rotation = Math.random() * Math.PI * 2;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
+        stage.removeChild(this.container);
+    }
+
+    draw(startAngle, endAngle) {
+        const color = COLORS.highlight.hex;
+        const radius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 3;
+        const lineWidth = (renderer.width < renderer.height ? renderer.width: renderer.height) / 10;
+        const shape = this.shape;
+        shape.beginFill(color, 0);
+        shape.lineStyle(lineWidth, color, 1);
+        shape.arc(0, 0, radius, startAngle, endAngle);
+        shape.endFill();
+    }
+
+    redraw(startAngle, endAngle) {
+        this.shape.clear();
+        this.draw(startAngle, endAngle);
     }
 }
 
