@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from './pixi-legacy.mjs';
-import { TweenLite, Expo, Circ, Sine} from "./gsap-core.js";
+import { TweenLite, Expo, Circ, Sine, Power3} from "./gsap-core.js";
 
 const COLORS = {
     background: {r: 181, g: 181, b: 181, hex: 0xb5b5b5},
@@ -34,6 +34,7 @@ export default class Animations {
         this.ufo = new ufo();
         this.splits = new splits();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
+        this.bubbles = new bubbles();
     }
 
     play({key}) {
@@ -49,6 +50,7 @@ export default class Animations {
             case 'r': this.pistons[0].play(); break;
             case 'f': this.pistons[1].play(); break;
             case 'v': this.pistons[2].play(); break;
+            case 'g': this.bubbles.play(); break;
         }
     }
 }
@@ -441,6 +443,109 @@ class piston {
     clear() {
         this.tween = undefined;
         stage.removeChild(this.container);
+    }
+}
+
+class bubbles {
+    constructor() {
+        const container = this.container = new Container();
+        const shapes = this.shapes = [];
+        this.color = COLORS.black.hex;
+
+        container.pivot.x = container.pivot.y = 0;
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        const amount = this.amount = 24;
+        const radius = this.radius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 3;
+        this.bubbleRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 90;
+        this.points = [...Array(amount).keys()].map(i => {
+            const pct = i / (amount - 1);
+            const theta = pct * Math.PI * 2;
+            const shape = new Graphics();
+            const x = radius * Math.cos(theta);
+            const y = radius * Math.sin(theta);
+            this.draw(shape, x, y);
+            shape.visible = false;
+            container.addChild(shape);
+            shapes.push(shape);
+            return {x, y, theta};
+        });
+        stage.addChild(container);
+    }
+
+    play() {
+        const self = this;
+        const container = this.container;
+        const shapes = this.shapes;
+        const points = this.points;
+        const amount = this.amount;
+
+        this.reset();
+
+        const current = this.current = new Graphics();
+        this.draw(current, points[0].x, points[0].y);
+        container.addChild(current);
+
+        const radius = this.radius;
+        const direction = this.direction;
+        const twoPI = Math.PI * 2;
+        const options = {theta: direction? 0: twoPI * 2};
+        this.tween = TweenLite.to(options, 1.4, {
+            theta: direction? twoPI * 2: 0,
+            ease: Power3.easeInOut,
+            onUpdate: function() {
+                const theta = options.theta;
+                if (direction) {
+                    if (theta <= twoPI)
+                        for (let i = 0; i < amount; i++)
+                            shapes[i].visible = points[i].theta < theta;
+                    else
+                        for (let i = 0; i < amount; i++)
+                            shapes[i].visible = points[i].theta >= (theta - twoPI);
+                }
+                else {
+                    if (theta > twoPI)
+                        for (let i = 0; i < amount; i++)
+                            shapes[i].visible = points[i].theta > (theta - twoPI);
+                    else
+                        for (let i = 0; i < amount; i++)
+                            shapes[i].visible = points[i].theta <= theta;
+                }
+                self.redraw(current, radius * Math.cos(theta), radius * Math.sin(theta))
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.direction = Math.random() > 0.5;
+        this.container.rotation = Math.random() * Math.PI * 2;
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.current)
+            this.current.clear();
+        this.shapes[this.amount - 1].visible = false;
+        stage.removeChild(this.container);
+    }
+
+    draw(graphic, x, y) {
+        graphic.beginFill(this.colors);
+        graphic.drawCircle(x, y, this.bubbleRadius);
+        graphic.endFill();
+    }
+
+    redraw(graphic, x, y) {
+        graphic.clear();
+        this.draw(graphic, x, y)
     }
 }
 
