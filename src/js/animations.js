@@ -8,8 +8,7 @@ const COLORS = {
     highlight: {r: 163, g: 141, b: 116, hex: 0xa38d74},
     accent: {r: 255, g: 197, b: 215, hex: 0xffc5d7},
     white: {r: 255, g: 255, b: 255, hex: 0xffffff},
-    black: {r: 0, g: 0, b: 0, hex: 0x000000},
-    isDark: false
+    black: {r: 0, g: 0, b: 0, hex: 0x000000}
 };
 
 const app = new Application();
@@ -37,7 +36,8 @@ export default class Animations {
         this.timer = new timer();
         this.bubbles = new corona('circle');
         this.corona = new corona('triangle');
-        this.suspension = new suspension();
+        this.suspension = new confetti(true);
+        this.confetti = new confetti(false);
     }
 
     play({key}) {
@@ -57,6 +57,7 @@ export default class Animations {
             case 'g': this.bubbles.play(); break;
             case 'b': this.corona.play(); break;
             case 'y': this.suspension.play(); break;
+            case 'n': this.confetti.play(); break;
         }
     }
 }
@@ -652,8 +653,8 @@ class corona {
     }
 }
 
-class suspension {
-    constructor() {
+class confetti {
+    constructor(simple = true) {
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
@@ -661,13 +662,15 @@ class suspension {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        const color = COLORS.white.hex;
-        const amount = 16;
+        const colors = Object.keys(COLORS).map(key => COLORS[key].hex);
+        const amount = simple ? 16: 32;
         const minRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 12/900;
         const maxRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 20/900;
 
+        this.simple = simple;
         this.points = [...Array(amount).keys()].map(() => {
             const radius = Math.round(lerp(minRadius, maxRadius, Math.random()));
+            const color = simple ? COLORS.white.hex: colors[Math.random() * colors.length | 0];
             const shape = new Graphics();
             shape.beginFill(color);
             shape.drawCircle(0, 0, radius);
@@ -706,22 +709,44 @@ class suspension {
             this.tween.kill();
             this.clear();
         }
+        const container = this.container;
         const shapes = this.shapes;
         const points = this.points;
 
+        const width = renderer.width;
         const height = renderer.height;
-        const theta = Math.random() * Math.PI * 2;
-        const deviation = Math.round(lerp(Math.PI / 4, Math.PI / 2, Math.random()));
+
+        const center = {x: width / 2, y: height / 2};
+        const axis = Math.random() > 0.5;
+        const direction = Math.random() > 0.5;
+
+        let theta, deviation, radius;
+        if (!this.simple) {
+            const ox = axis? center.x: (direction? width * 1.125: width * - 0.125);
+            const oy = !axis? center.y: (direction? height * 1.125: height * - 0.125);
+            container.x = ox;
+            container.y = oy;
+
+            theta = Math.atan2(center.y - oy, center.x - ox);
+            deviation = Math.PI / 2;
+            radius = width;
+        }
+        else {
+            theta = Math.random() * Math.PI * 2; 
+            deviation = Math.round(lerp(Math.PI / 4, Math.PI / 2, Math.random()));
+            radius = height;
+        }
+
         shapes.forEach((shape, idx) => {
             const t = theta + Math.random() * deviation * 2 - deviation;
-            const r = Math.random() * height;
+            const r = Math.random() * radius;
             points[idx].x = r * Math.cos(t);
             points[idx].y = r * Math.sin(t);
 
             shape.x = 0;
             shape.y = 0;
         });
-        stage.addChild(this.container);
+        stage.addChild(container);
     }
 
     clear() {
