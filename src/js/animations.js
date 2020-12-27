@@ -26,18 +26,18 @@ export default class Animations {
         window.onresize = () => renderer.resize(window.innerWidth, window.innerHeight);
         renderer.backgroundColor = COLORS.background.hex;
 
-        this.flashes = [new flash(0), new flash(1), new flash(2)];
-        this.veil = new wipe('y');
-        this.wipe = new wipe('x');
+        this.flashes = [new flash({style: 'black'}), new flash({style: 'white'}), new flash({style: 'accent'})];
+        this.veil = new wipe({axis: 'y'});
+        this.wipe = new wipe({axis: 'x'});
         this.moon = new moon();
         this.ufo = new ufo();
         this.splits = new splits();
-        this.pistons = [new piston(0), new piston(1), new piston(2)];
+        this.pistons = [new piston({amount: 1}), new piston({amount: 5}), new piston({amount: 9})];
         this.timer = new timer();
-        this.bubbles = new corona('circle');
-        this.corona = new corona('triangle');
-        this.suspension = new confetti(true);
-        this.confetti = new confetti(false);
+        this.bubbles = new corona({style: 'circle'});
+        this.corona = new corona({style: 'triangle'});
+        this.suspension = new confetti({style: 'simple'});
+        this.confetti = new confetti({style: 'colorful'});
     }
 
     play({key}) {
@@ -63,12 +63,12 @@ export default class Animations {
 }
 
 class flash {
-    constructor(id) {
+    constructor({style}) { // style: black, white, accent
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
-        const colors = [COLORS.black.hex, COLORS.white.hex, COLORS.accent.hex];
+        const color = COLORS[style].hex;
 
-        shape.beginFill(colors[id]);
+        shape.beginFill(color);
         shape.drawRect(0, 0, renderer.width, renderer.height);
         shape.endFill();
         shape.visible = false;
@@ -105,7 +105,7 @@ class flash {
 }
 
 class wipe {
-    constructor(axis) {
+    constructor({axis}) {
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         const center = this.center = {x: renderer.width / 2, y: renderer.height / 2};
@@ -387,12 +387,11 @@ class splits {
 }
 
 class piston {
-    constructor(id) {
+    constructor({amount}) {
         const container = this.container = new Container();
         const shapes = this.shapes = [];
         const color = this.color = COLORS.white.hex;
 
-        const amount = id * 4 + 1;
         const width = this.width = renderer.width * 0.75;
         const height = this.height = renderer.height * 0.5;
 
@@ -520,7 +519,7 @@ class timer {
 }
 
 class corona {
-    constructor(type) {
+    constructor({style}) { // style: circle or triangle
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
@@ -528,10 +527,10 @@ class corona {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        this.type = type; // circle or triangle
-        this.color = type == 'circle'? COLORS.black.hex: COLORS.white.hex;
-        const amount = this.amount = type == 'circle'? 24: 32;
-        const radius = this.radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * (type == 'circle'? 0.33: 0.45);
+        this.style = style;
+        this.color = style == 'circle'? COLORS.black.hex: COLORS.white.hex;
+        const amount = this.amount = style == 'circle'? 24: 32;
+        const radius = this.radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * (style == 'circle'? 0.33: 0.45);
 
         this.graphicRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 90;
         this.points = [...Array(amount).keys()].map(i => {
@@ -641,7 +640,7 @@ class corona {
     }
 
     draw(graphic, x, y, theta) {
-        if (this.type == 'circle')
+        if (this.style == 'circle')
             this.drawCircle(graphic, x, y);
         else
             this.drawTriangle(graphic, x, y, theta);
@@ -654,7 +653,7 @@ class corona {
 }
 
 class confetti {
-    constructor(simple = true) {
+    constructor({style}) { // style: simple or colorful
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
@@ -663,14 +662,14 @@ class confetti {
         container.position.y = renderer.height / 2;
 
         const colors = Object.keys(COLORS).map(key => COLORS[key].hex);
-        const amount = simple ? 16: 32;
+        const amount = style == 'simple'? 16: 32;
         const minRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 12/900;
         const maxRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 20/900;
 
-        this.simple = simple;
+        this.style = style;
         this.points = [...Array(amount).keys()].map(() => {
             const radius = Math.round(lerp(minRadius, maxRadius, Math.random()));
-            const color = simple ? COLORS.white.hex: colors[Math.random() * colors.length | 0];
+            const color = style == 'simple'? COLORS.white.hex: colors[Math.random() * colors.length | 0];
             const shape = new Graphics();
             shape.beginFill(color);
             shape.drawCircle(0, 0, radius);
@@ -719,9 +718,10 @@ class confetti {
         const center = {x: width / 2, y: height / 2};
         const axis = Math.random() > 0.5;
         const direction = Math.random() > 0.5;
+        const style = this.style;
 
         let theta, deviation, radius;
-        if (!this.simple) {
+        if (style == 'colorful') {
             const ox = axis? center.x: (direction? width * 1.125: width * - 0.125);
             const oy = !axis? center.y: (direction? height * 1.125: height * - 0.125);
             container.x = ox;
@@ -731,7 +731,7 @@ class confetti {
             deviation = Math.PI / 2;
             radius = width;
         }
-        else {
+        else if (style == 'simple') {
             theta = Math.random() * Math.PI * 2; 
             deviation = Math.round(lerp(Math.PI / 4, Math.PI / 2, Math.random()));
             radius = height;
