@@ -35,7 +35,8 @@ export default class Animations {
         this.splits = new splits();
         this.pistons = [new piston(0), new piston(1), new piston(2)];
         this.timer = new timer();
-        this.bubbles = new bubbles();
+        this.bubbles = new corona('circle');
+        this.corona = new corona('triangle');
     }
 
     play({key}) {
@@ -53,6 +54,7 @@ export default class Animations {
             case 'v': this.pistons[2].play(); break;
             case 't': this.timer.play(); break;
             case 'g': this.bubbles.play(); break;
+            case 'b': this.corona.play(); break;
         }
     }
 }
@@ -514,26 +516,28 @@ class timer {
     }
 }
 
-class bubbles {
-    constructor() {
+class corona {
+    constructor(type) {
         const container = this.container = new Container();
         const shapes = this.shapes = [];
-        this.color = COLORS.black.hex;
 
         container.pivot.x = container.pivot.y = 0;
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        const amount = this.amount = 24;
-        const radius = this.radius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 3;
-        this.bubbleRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 90;
+        this.type = type; // circle or triangle
+        this.color = type == 'circle'? COLORS.black.hex: COLORS.white.hex;
+        const amount = this.amount = type == 'circle'? 24: 32;
+        const radius = this.radius = (renderer.width < renderer.height ? renderer.width: renderer.height) * (type == 'circle'? 0.33: 0.45);
+
+        this.graphicRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) / 90;
         this.points = [...Array(amount).keys()].map(i => {
             const pct = i / (amount - 1);
             const theta = pct * Math.PI * 2;
             const shape = new Graphics();
             const x = radius * Math.cos(theta);
             const y = radius * Math.sin(theta);
-            this.draw(shape, x, y);
+            this.draw(shape, x, y, theta);
             shape.visible = false;
             container.addChild(shape);
             shapes.push(shape);
@@ -552,7 +556,7 @@ class bubbles {
         this.reset();
 
         const current = this.current = new Graphics();
-        this.draw(current, points[0].x, points[0].y);
+        this.draw(current, points[0].x, points[0].y, points[0].theta);
         container.addChild(current);
 
         const radius = this.radius;
@@ -580,7 +584,7 @@ class bubbles {
                         for (let i = 0; i < amount; i++)
                             shapes[i].visible = points[i].theta <= theta;
                 }
-                self.redraw(current, radius * Math.cos(theta), radius * Math.sin(theta))
+                self.redraw(current, radius * Math.cos(theta), radius * Math.sin(theta), theta);
             },
             onComplete: () => self.clear()
         });
@@ -605,15 +609,44 @@ class bubbles {
         stage.removeChild(this.container);
     }
 
-    draw(graphic, x, y) {
+    drawCircle(graphic, x, y) {
         graphic.beginFill(this.color);
-        graphic.drawCircle(x, y, this.bubbleRadius);
+        graphic.drawCircle(x, y, this.graphicRadius);
         graphic.endFill();
     }
 
-    redraw(graphic, x, y) {
+    drawTriangle(graphic, x, y, theta) {
+        const radius = this.graphicRadius;
+        const pct = 1 / 3;
+        const t1 = {
+            x: x + radius * Math.cos(theta),
+            y: y + radius * Math.sin(theta)
+        }
+        const t2 = {
+            x: x + radius * Math.cos(theta + Math.PI * 2 * pct),
+            y: y + radius * Math.sin(theta + Math.PI * 2 * pct)
+        }
+        const t3 = {
+            x: x + radius * Math.cos(theta + Math.PI * 2 * pct * 2),
+            y: y + radius * Math.sin(theta + Math.PI * 2 * pct * 2)
+        }
+        graphic.beginFill(this.color);
+        graphic.moveTo(t1.x, t1.y);
+        graphic.lineTo(t2.x, t2.y);
+        graphic.lineTo(t3.x, t3.y);
+        graphic.endFill();
+    }
+
+    draw(graphic, x, y, theta) {
+        if (this.type == 'circle')
+            this.drawCircle(graphic, x, y);
+        else
+            this.drawTriangle(graphic, x, y, theta);
+    }
+
+    redraw(graphic, x, y, theta) {
         graphic.clear();
-        this.draw(graphic, x, y)
+        this.draw(graphic, x, y, theta);
     }
 }
 
