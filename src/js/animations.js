@@ -37,6 +37,7 @@ export default class Animations {
         this.timer = new timer();
         this.bubbles = new corona('circle');
         this.corona = new corona('triangle');
+        this.suspension = new suspension();
     }
 
     play({key}) {
@@ -55,6 +56,7 @@ export default class Animations {
             case 't': this.timer.play(); break;
             case 'g': this.bubbles.play(); break;
             case 'b': this.corona.play(); break;
+            case 'y': this.suspension.play(); break;
         }
     }
 }
@@ -647,6 +649,86 @@ class corona {
     redraw(graphic, x, y, theta) {
         graphic.clear();
         this.draw(graphic, x, y, theta);
+    }
+}
+
+class suspension {
+    constructor() {
+        const container = this.container = new Container();
+        const shapes = this.shapes = [];
+
+        container.pivot.x = container.pivot.y = 0;
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        const color = COLORS.white.hex;
+        const amount = 16;
+        const minRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 12/900;
+        const maxRadius = (renderer.width < renderer.height ? renderer.width: renderer.height) * 20/900;
+
+        this.points = [...Array(amount).keys()].map(() => {
+            const radius = Math.round(lerp(minRadius, maxRadius, Math.random()));
+            const shape = new Graphics();
+            shape.beginFill(color);
+            shape.drawCircle(0, 0, radius);
+            shape.endFill();
+            container.addChild(shape);
+            shapes.push(shape);
+            return {x: 0, y: 0};
+        });
+    }
+
+    play() {
+        const self = this;
+        const shapes = this.shapes;
+        const points = this.points;
+
+        this.reset();
+
+        const options = {ending: 0};
+        this.tween = TweenLite.to(options, 0.5, {
+            ending: 1.0,
+            ease: Sine.easeOut,
+            onUpdate: function() {
+                const t = this.totalTime() * 2;
+                shapes.forEach((shape, idx) => {
+                    const point = points[idx];
+                    shape.x = lerp(shape.x, point.x, t);
+                    shape.y = lerp(shape.y, point.y, t);
+                });
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+        const shapes = this.shapes;
+        const points = this.points;
+
+        const height = renderer.height;
+        const theta = Math.random() * Math.PI * 2;
+        const deviation = Math.round(lerp(Math.PI / 4, Math.PI / 2, Math.random()));
+        shapes.forEach((shape, idx) => {
+            const t = theta + Math.random() * deviation * 2 - deviation;
+            const r = Math.random() * height;
+            points[idx].x = r * Math.cos(t);
+            points[idx].y = r * Math.sin(t);
+
+            shape.x = 0;
+            shape.y = 0;
+        });
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.current)
+            this.current.clear();
+        stage.removeChild(this.container);
     }
 }
 
