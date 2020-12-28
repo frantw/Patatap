@@ -318,7 +318,7 @@ class splits {
         const container = this.container = new Container();
         const shapeTop = this.shapeTop = new Graphics();
         const shapeBottom = this.shapeBottom = new Graphics();
-        const distance = this.distance = renderer.height / 6;
+        this.distance = renderer.height / 6;
 
         this.drawHalfCircle(shapeTop, Math.PI, 0);
         this.drawHalfCircle(shapeBottom, 0, Math.PI);
@@ -351,10 +351,11 @@ class splits {
             self.tween = TweenLite.to(options, 0.5, {
                 ending: 1.0,
                 ease: Circ.easeOut,
+                delay: 0.5,
                 onUpdate: function() {
                     const t = this.totalTime() * 2;
-                    shapeTop.y = - self.distance * t;
-                    shapeBottom.y = self.distance * t;
+                    shapeTop.y = lerp(shapeTop.y, - self.distance, t);
+                    shapeBottom.y = lerp(shapeBottom.y, self.distance, t);
                     shapeTop.alpha = shapeBottom.alpha = 1 - t;
                 },
                 onComplete: () => self.clear()
@@ -369,7 +370,8 @@ class splits {
         }
 
         this.container.rotation = Math.random() * Math.PI * 2;
-        this.shapeTop.y = this.shapeBottom.y = 0;
+        this.shapeTop.y = 0.25;
+        this.shapeBottom.y = -0.25;
         this.shapeTop.alpha = this.shapeBottom.alpha = 1;
         stage.addChild(this.container);
     }
@@ -459,7 +461,6 @@ class timer {
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
 
-        container.pivot.x = container.pivot.y = 0;
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
         container.addChild(shape);
@@ -525,7 +526,6 @@ class corona {
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
-        container.pivot.x = container.pivot.y = 0;
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
@@ -659,7 +659,6 @@ class confetti {
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
-        container.pivot.x = container.pivot.y = 0;
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
