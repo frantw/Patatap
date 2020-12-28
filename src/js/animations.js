@@ -37,6 +37,7 @@ export default class Animations {
         this.bubbles = new corona({style: 'circle'});
         this.corona = new corona({style: 'triangle'});
         this.suspension = new confetti({style: 'simple'});
+        this.strike = new strike();
         this.confetti = new confetti({style: 'colorful'});
     }
 
@@ -57,6 +58,7 @@ export default class Animations {
             case 'g': this.bubbles.play(); break;
             case 'b': this.corona.play(); break;
             case 'y': this.suspension.play(); break;
+            case 'h': this.strike.play(); break;
             case 'n': this.confetti.play(); break;
         }
     }
@@ -754,6 +756,96 @@ class confetti {
         if (this.current)
             this.current.clear();
         stage.removeChild(this.container);
+    }
+}
+
+class strike {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        this.color = COLORS.black.hex;
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        stage.addChild(container);
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const options = {beginning: 0, ending: 0};
+        const origin = this.origin;
+        const destination = this.destination;
+
+        this.tween = TweenLite.to(options, 0.25, {
+            beginning: 1.0,
+            ease: Circ.easeIn,
+            onUpdate: function() {
+                const t = this.totalTime() * 4;
+                const x = lerp(origin.x, destination.x, t);
+                const y = lerp(origin.y, destination.y, t);
+                self.redraw(origin, {x, y});
+            },
+            onComplete: animationOut
+        });
+
+        function animationOut(){
+            self.tween = TweenLite.to(options, 0.25, {
+                ending: 1.0,
+                ease: Circ.easeOut,
+                onUpdate: function() {
+                    const t = this.totalTime() * 4;
+                    const x = lerp(origin.x, destination.x, t);
+                    const y = lerp(origin.y, destination.y, t);
+                    self.redraw({x, y}, destination);
+                },
+                onComplete: () => self.clear()
+            });
+        };
+    }
+
+    redraw(p1, p2) {
+        const shape = this.shape;
+        shape.clear();
+        shape.beginFill(this.color);
+        shape.lineStyle({
+            width: Math.round(this.ratio * 7) + 3,
+            color: this.color,
+            alpha: 1.0,
+            cap: 'round'
+        });
+        shape.moveTo(p1.x, p1.y);
+        shape.lineTo(p2.x, p2.y);
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const ratio = this.ratio = Math.random();
+        const radius = Math.round(lerp(renderer.height * 0.5, renderer.width, ratio));
+        const theta = Math.random() * Math.PI * 2;
+        this.origin = {
+            x: radius * Math.cos(theta),
+            y: radius * Math.sin(theta)
+        };
+        this.destination = {
+            x: radius * Math.cos(theta + Math.PI),
+            y: radius * Math.sin(theta + Math.PI)
+        };
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
     }
 }
 
