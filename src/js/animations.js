@@ -39,6 +39,7 @@ export default class Animations {
         this.suspension = new confetti({style: 'simple'});
         this.strike = new strike();
         this.confetti = new confetti({style: 'colorful'});
+        this.prisms = [new prism({style: 'triangle'}), new prism({style: 'square'}), new prism({style: 'hexagon'})];
     }
 
     play({key}) {
@@ -60,6 +61,9 @@ export default class Animations {
             case 'y': this.suspension.play(); break;
             case 'h': this.strike.play(); break;
             case 'n': this.confetti.play(); break;
+            case 'u': this.prisms[0].play(); break;
+            case 'j': this.prisms[1].play(); break;
+            case 'm': this.prisms[2].play(); break;
         }
     }
 }
@@ -845,6 +849,80 @@ class strike {
         this.tween = undefined;
         if (this.shape)
             this.shape.clear();
+    }
+}
+
+class prism {
+    constructor({style}) { // style: triangle, square or hexagon
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        const color = this.color = COLORS.black.hex;
+        const amount = style == 'hexagon'? 6: (style == 'square'? 4: 3);
+        const radius = 100;
+        const pointRadius = 2;
+        const lineWidth = 0.5;
+
+        const points = this.points = [...Array(amount).keys()].map(i => {
+            const pct = i / amount;
+            const theta = Math.PI * 2 * pct;
+            const x = radius * Math.cos(theta);
+            const y = radius * Math.sin(theta);
+            shape.beginFill(color);
+            shape.drawCircle(x, y, pointRadius);
+            shape.endFill();
+            return {x, y};
+        });
+
+        shape.beginFill(color, 0);
+        shape.lineStyle(lineWidth, color);
+        shape.moveTo(points[amount - 1].x, points[amount - 1].y);
+        points.forEach(p => shape.lineTo(p.x, p.y));
+        shape.endFill();
+
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const options = {ending: 0};
+        const scalar = 10;
+
+        this.tween = TweenLite.to(options, 0.75, {
+            ending: 1.0,
+            ease: Circ.easeIn,
+            onUpdate: function() {
+                const t = this.totalTime() / 0.75;
+                self.scale(t * scalar);
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.scale(0);
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tween = undefined;
+        stage.removeChild(this.container);
+    }
+
+    scale(s) {
+        this.shape.scale.x = s;
+        this.shape.scale.y = s;
     }
 }
 
