@@ -40,6 +40,7 @@ export default class Animations {
         this.strike = new strike();
         this.confetti = new confetti({style: 'colorful'});
         this.prisms = [new prism({style: 'triangle'}), new prism({style: 'square'}), new prism({style: 'hexagon'})];
+        this.squiggle = new squiggle();
     }
 
     play({key}) {
@@ -64,6 +65,7 @@ export default class Animations {
             case 'u': this.prisms[0].play(); break;
             case 'j': this.prisms[1].play(); break;
             case 'm': this.prisms[2].play(); break;
+            case 'i': this.squiggle.play(); break;
         }
     }
 }
@@ -923,6 +925,103 @@ class prism {
     scale(s) {
         this.shape.scale.x = s;
         this.shape.scale.y = s;
+    }
+}
+
+class squiggle {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        this.color = COLORS.accent.hex;
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        stage.addChild(container);
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const options = {beginning: 0, ending: 0};
+
+        this.tween = TweenLite.to(options, 0.5, {
+            beginning: 1.0,
+            ease: Sine.easeOut,
+            onUpdate: function() {
+                const t = this.totalTime() * 2;
+                self.redraw(0.0, t);
+            },
+            onComplete: animationOut
+        });
+
+        function animationOut(){
+            self.tween = TweenLite.to(options, 0.5, {
+                ending: 1.0,
+                ease: Sine.easeIn,
+                onUpdate: function() {
+                    const t = this.totalTime() * 2;
+                    self.redraw(t, 1.0);
+                },
+                onComplete: () => self.clear()
+            });
+        };
+    }
+
+    redraw(startRatio, endRatio) {
+        const shape = this.shape;
+        const color = this.color;
+
+        shape.clear();
+        shape.beginFill(color, 0);
+        shape.lineStyle({
+            width: renderer.height / 40,
+            color: color,
+            alpha: 1.0,
+            join: 'round',
+            cap: 'round'
+        });
+
+        const ratioToIndex = ratio => Math.floor(this.amount * ratio);
+        const points = this.points.slice(ratioToIndex(startRatio), ratioToIndex(endRatio));
+        if (points.length) {
+            shape.moveTo(points[0].x, points[0].y);
+            points.forEach(p => shape.lineTo(p.x, p.y));
+        }
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const direction = Math.random() > 0.5;
+        this.shape.rotation =  direction * Math.PI;
+
+        const amount = this.amount = 400;
+        const width = renderer.width / 2;
+        const height = renderer.height / 3;
+        const phi = Math.round(Math.random() * 6) + 1;
+
+        const offset = Math.PI * 0.5;
+        this.points = [...Array(amount).keys()].map(i => {
+            const pct = i / (amount - 1);
+            const theta = Math.PI * 2 * pct * phi + offset;
+            const x = lerp(- width / 2, width / 2, pct);
+            const y = height * Math.sin(theta);
+            return {x, y};
+        });
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
     }
 }
 
