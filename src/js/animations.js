@@ -41,6 +41,7 @@ export default class Animations {
         this.confetti = new confetti({style: 'colorful'});
         this.prisms = [new prism({style: 'triangle'}), new prism({style: 'square'}), new prism({style: 'hexagon'})];
         this.squiggle = new squiggle();
+        this.pinwheel = new pinwheel();
     }
 
     play({key}) {
@@ -66,6 +67,7 @@ export default class Animations {
             case 'j': this.prisms[1].play(); break;
             case 'm': this.prisms[2].play(); break;
             case 'i': this.squiggle.play(); break;
+            case 'k': this.pinwheel.play(); break;
         }
     }
 }
@@ -1016,6 +1018,101 @@ class squiggle {
             const y = height * Math.sin(theta);
             return {x, y};
         });
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
+    }
+}
+
+class pinwheel {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        this.color = COLORS.highlight.hex;
+        const amount = 8;
+        const radius = this.radius = renderer.height / 5;
+
+        const sequence = this.sequence = [];
+        for (let idx = amount - 1; idx >= 0; idx --) {
+            const num = idx + 1;
+            if (idx > 1) {
+                const points = [...Array(num).keys()].map(i => {
+                    const pct = i / num;
+                    const theta = Math.PI * 2 * pct;
+                    const x = radius * Math.cos(theta);
+                    const y = radius * Math.sin(theta);
+                    return {x , y};
+                });
+                sequence[idx] = points;
+            }
+            else {
+                const points = sequence[2].slice(0, 2).concat([{
+                    x: lerp(sequence[2][1].x, sequence[2][2].x, num / 3),
+                    y: lerp(sequence[2][1].y, sequence[2][2].y, num / 3)
+                }]);
+                sequence[idx] = points;
+            }
+        }
+
+        stage.addChild(container);
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const options = {beginning: 0, ending: 0};
+
+        this.tween = TweenLite.to(options, 0.8, {
+            beginning: 1.0,
+            ease: Sine.easeOut,
+            onUpdate: function() {
+                const t = this.totalTime() * (1 / 0.8);
+                self.redraw(Math.floor(t * 7));
+            },
+            onComplete: animationOut
+        });
+
+        function animationOut(){
+            self.tween = TweenLite.to(options, 0.1, {
+                ending: 1.0,
+                ease: Sine.easeOut,
+                onUpdate: function() {
+                    const t = this.totalTime() * 10;
+                    self.shape.scale.x = 1 - t;
+                    self.shape.scale.y = 1 - t;
+                },
+                onComplete: () => self.clear()
+            });
+        };
+    }
+
+    redraw(index) {
+        const shape = this.shape;
+        shape.clear();
+        shape.beginFill(this.color);
+        shape.drawPolygon(this.sequence[index]);
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        this.shape.scale.x = 1.0;
+        this.shape.scale.y = 1.0;
+        this.shape.rotation = Math.random() * Math.PI * 2;
     }
 
     clear() {
