@@ -1036,30 +1036,22 @@ class pinwheel {
         container.position.y = renderer.height / 2;
 
         this.color = COLORS.highlight.hex;
-        const amount = 8;
-        const radius = this.radius = renderer.height / 5;
+        const amount = this.amount = 8;
+        const radius = renderer.height / 5;
 
         const sequence = this.sequence = [];
-        for (let idx = amount - 1; idx >= 0; idx --) {
-            const num = idx + 1;
-            if (idx > 1) {
-                const points = [...Array(num).keys()].map(i => {
-                    const pct = i / num;
-                    const theta = Math.PI * 2 * pct;
-                    const x = radius * Math.cos(theta);
-                    const y = radius * Math.sin(theta);
-                    return {x , y};
-                });
-                sequence[idx] = points;
-            }
-            else {
-                const points = sequence[2].slice(0, 2).concat([{
-                    x: lerp(sequence[2][1].x, sequence[2][2].x, num / 3),
-                    y: lerp(sequence[2][1].y, sequence[2][2].y, num / 3)
-                }]);
-                sequence[idx] = points;
-            }
-        }
+        for (let num = 0; num < amount; num++) {
+            const points = [];
+            for (let i = 0; i < amount; i++) {
+                const pct = (i <= num ? i : num)/ (num + 1);
+                const theta = Math.PI * 2 * pct;
+                const x = radius * Math.cos(theta);
+                const y = radius * Math.sin(theta);
+                points.push(x);
+                points.push(y);
+            };
+            sequence.push(points);
+        };
 
         stage.addChild(container);
         container.addChild(shape);
@@ -1070,17 +1062,21 @@ class pinwheel {
 
         this.reset();
 
-        const options = {beginning: 0, ending: 0};
+        const options = {ending: 0};
+        const current = this.current;
+        const sequence = this.sequence;
 
-        this.tween = TweenLite.to(options, 0.8, {
-            beginning: 1.0,
-            ease: Sine.easeOut,
-            onUpdate: function() {
-                const t = this.totalTime() * (1 / 0.8);
-                self.redraw(Math.floor(t * 7));
-            },
-            onComplete: animationOut
-        });
+        let idx = 0;
+        this.tween = animationIn(idx);
+
+        function animationIn(idx) {
+            return TweenLite.to(current, 0.1, {
+                ...sequence[idx],
+                ease: Sine.easeOut,
+                onUpdate: () => self.redraw(current),
+                onComplete: () => (idx < sequence.length - 1)? self.tween = animationIn(++idx): animationOut()
+            });
+        }
 
         function animationOut(){
             self.tween = TweenLite.to(options, 0.1, {
@@ -1096,11 +1092,11 @@ class pinwheel {
         };
     }
 
-    redraw(index) {
+    redraw(points) {
         const shape = this.shape;
         shape.clear();
         shape.beginFill(this.color);
-        shape.drawPolygon(this.sequence[index]);
+        shape.drawPolygon(points);
         shape.endFill();
     }
 
@@ -1110,9 +1106,12 @@ class pinwheel {
             this.clear();
         }
 
-        this.shape.scale.x = 1.0;
-        this.shape.scale.y = 1.0;
-        this.shape.rotation = Math.random() * Math.PI * 2;
+        const shape = this.shape;
+        shape.scale.x = 1.0;
+        shape.scale.y = 1.0;
+        shape.rotation = Math.random() * Math.PI * 2;
+
+        this.current = [...Array(this.amount * 2).keys()].map(() => 0);
     }
 
     clear() {
