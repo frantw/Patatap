@@ -42,6 +42,7 @@ export default class Animations {
         this.prisms = [new prism({style: 'triangle'}), new prism({style: 'square'}), new prism({style: 'hexagon'})];
         this.squiggle = new squiggle();
         this.pinwheel = new pinwheel();
+        this.glimmer = new glimmer();
     }
 
     play({key}) {
@@ -68,6 +69,7 @@ export default class Animations {
             case 'm': this.prisms[2].play(); break;
             case 'i': this.squiggle.play(); break;
             case 'k': this.pinwheel.play(); break;
+            case 'o': this.glimmer.play(); break;
         }
     }
 }
@@ -1118,6 +1120,83 @@ class pinwheel {
         this.tween = undefined;
         if (this.shape)
             this.shape.clear();
+    }
+}
+
+class glimmer {
+    constructor() {
+        const container = this.container = new Container();
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        const colors = Object.keys(COLORS).map(key => COLORS[key].hex).slice(1);
+        const amount = 12;
+        const minRadius = renderer.height * 20/900;
+        const maxRadius = minRadius * 2;
+
+        this.points = [...Array(amount).keys()].map(() => {
+            const radius = Math.round(lerp(minRadius, maxRadius, Math.random()));
+            const color = colors[Math.random() * colors.length | 0];
+
+            const shape = new Graphics();
+            container.addChild(shape);
+            return {radius, color, shape};
+        });
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const points = this.points;
+        this.tweens = points.map((point) => {
+            return TweenLite.to(point, 0.2, {
+                scale: 1,
+                lineWidth: 0,
+                ease: Sine.easeOut,
+                delay: Math.random() * 0.5,
+                onUpdate: () => self.redraw(point)
+            });
+        });
+    }
+
+    redraw({shape, x, y, radius, color, lineWidth, scale}) {
+        shape.clear();
+        shape.beginFill(color, 0);
+        shape.lineStyle(lineWidth, color, 1);
+        shape.drawCircle(0, 0, radius);
+        shape.x = x;
+        shape.y = y;
+        shape.scale.x = scale;
+        shape.scale.y = scale;
+        shape.visible = true;
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tweens) {
+            this.tweens.forEach(tween => tween.kill());
+            this.clear();
+        }
+
+        const radius = renderer.height / 2;
+        this.points.forEach(point => {
+            const theta = Math.PI * 2 * Math.random();
+            point.x = Math.random() * radius * Math.cos(theta);
+            point.y = Math.random() * radius * Math.sin(theta);
+            point.lineWidth = Math.random() * 20 + 40;
+            point.scale = 0;
+        });
+
+        stage.addChild(this.container);
+    }
+
+    clear() {
+        this.tweens = undefined;
+        this.points.forEach(p => p.shape.visible = false);
+        stage.removeChild(this.container);
     }
 }
 
