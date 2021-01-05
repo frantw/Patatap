@@ -44,6 +44,7 @@ export default class Animations {
         this.pinwheel = new pinwheel();
         this.glimmer = new glimmer();
         this.zigzag = new zigzag();
+        this.spiral = new spiral();
     }
 
     play({key}) {
@@ -72,6 +73,7 @@ export default class Animations {
             case 'k': this.pinwheel.play(); break;
             case 'o': this.glimmer.play(); break;
             case 'l': this.zigzag.play(); break;
+            case 'p': this.spiral.play(); break;
         }
     }
 }
@@ -1292,6 +1294,123 @@ class zigzag {
             const y = lerp(- height / 2, height / 2, pct);
             return {x, y};
         });
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
+    }
+}
+
+class spiral {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+        this.color = COLORS.black.hex;
+
+        container.position.x = renderer.width / 2;
+        container.position.y = renderer.height / 2;
+
+        stage.addChild(container);
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const rotation = this.rotation;
+        const scalar = this.scalar;
+        const options = {beginning: 0, ending: 0, rotation, scalar};
+
+        this.lineWidth = (renderer.width < renderer.height ? renderer.width: renderer.height) / this.amount;
+        this.tween = TweenLite.to(options, 2.0, {
+            beginning: 1.0,
+            rotation: rotation + Math.PI / 8,
+            scalar: Math.random() * 2 + 10,
+            ease: Circ.easeIn,
+            onUpdate: function() {
+                const t = Math.min(lerp(0, self.resolution, options.beginning), 1);
+                self.rotation = options.rotation;
+                self.scalar = options.scalar;
+                self.redraw(0.0, t);
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    redraw(startRatio, endRatio) {
+        const shape = this.shape;
+        const color = this.color;
+        const lineWidth = this.lineWidth;
+
+        shape.clear();
+        shape.beginFill(color, 0);
+
+        const amount = this.amount * 2;
+        const ratioToIndex = ratio => Math.floor(amount * ratio);
+        const points = this.points.slice(ratioToIndex(startRatio), ratioToIndex(endRatio));
+        if (points.length) {
+            points.forEach((p, i) => {
+                const pct = i / amount;
+                shape.lineStyle({
+                    width: Math.sqrt(1 - pct) * lineWidth,
+                    color: color,
+                    alpha: 1.0,
+                    join: 'round',
+                    cap: 'round'
+                });
+
+                if (i % 2 === 0)
+                    shape.moveTo(p.x, p.y);
+                else
+                    shape.lineTo(p.x, p.y);
+            });
+        }
+        shape.endFill();
+
+        this.container.rotation = this.rotation;
+        this.shape.scale.x = this.scalar;
+        this.shape.scale.y = this.scalar;
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const container = this.container;
+        const shape = this.shape;
+        const rotation = this.rotation = Math.random() * Math.PI * 2;
+        const scalar = this.scalar = 1.0;
+
+        container.rotation = rotation;
+        shape.scale.x = scalar;
+        shape.scale.y = scalar;
+
+        const amount = this.amount = 120;
+        const resolution = this.resolution = 4;
+        const magnitude = (renderer.width < renderer.height ? renderer.width: renderer.height) / 2;
+
+        const points = this.points = [];
+        [...Array(amount).keys()].forEach(i => {
+            let pct = i / amount;
+            const radius = () => magnitude * pct;
+            const theta = () => Math.PI * pct * resolution;
+
+            const x1 = radius() * Math.cos(theta());
+            const y1 = radius() * Math.sin(theta());
+            points.push({x: x1, y: y1});
+
+            pct = (i + 0.25) / amount;
+            const x2 = radius() * Math.cos(theta());
+            const y2 = radius() * Math.sin(theta());
+            points.push({x: x2, y: y2});
+        });
+        this.points.reverse();
     }
 
     clear() {
