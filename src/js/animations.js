@@ -27,6 +27,7 @@ export default class Animations {
         renderer.backgroundColor = COLORS.background.hex;
 
         this.flashes = [new flash({style: 'black'}), new flash({style: 'white'}), new flash({style: 'accent'})];
+        this.clay = new clay();
         this.veil = new wipe({axis: 'y'});
         this.wipe = new wipe({axis: 'x'});
         this.moon = new moon();
@@ -52,6 +53,7 @@ export default class Animations {
             case 'q': this.flashes[0].play(); break;
             case 'a': this.flashes[1].play(); break;
             case 'z': this.flashes[2].play(); break;
+            case 'w': this.clay.play(); break;
             case 's': this.veil.play(); break;
             case 'x': this.wipe.play(); break;
             case 'e': this.moon.play(); break;
@@ -117,6 +119,117 @@ class flash {
         this.shape.visible = false;
         stage.removeChild(this.container);
         this.animation = undefined;
+    }
+}
+
+class clay {
+    constructor() {
+        const container = this.container = new Container();
+        const shape = this.shape = new Graphics();
+
+        this.color = COLORS.middleground.hex;
+        const amount = this.amount = Math.floor(Math.random()) * 8 + 8;
+        const radius = this.radius = renderer.height;
+
+        this.points = [...Array(amount).keys()].map(i => {
+            const pct = i / amount;
+            const theta = Math.PI * 2 * pct;
+            const x = radius * Math.sin(theta);
+            const y = radius * Math.cos(theta);
+            return {x, y, theta};
+        });
+
+        stage.addChild(container);
+        container.addChild(shape);
+    }
+
+    play() {
+        const self = this;
+
+        this.reset();
+
+        const options = {beginning: 0};
+        const points = this.points;
+        const destinations = this.destinations;
+
+        this.tween = TweenLite.to(options, 0.75, {
+            beginning: 1.0,
+            ease: Circ.easeOut,
+            onUpdate: function() {
+                // const t = this.totalTime() * 4 / 3;
+                const t = options.beginning;
+                const current = destinations.map((d, i) => ({
+                    x: lerp(points[i].x, d.x, t),
+                    y: lerp(points[i].y, d.y, t)
+                }));
+                self.redraw(current);
+            },
+            onComplete: () => self.clear()
+        });
+    }
+
+    redraw(points) {
+        const shape = this.shape;
+        const color = this.color;
+        const amount = this.amount;
+        shape.clear();
+        shape.beginFill(color);
+
+        // It doesn't actually draw through each of the points, just a approximation method.
+        const x = (points[amount - 1].x + points[0].x) / 2;
+        const y = (points[amount - 1].y + points[0].y) / 2;
+        shape.moveTo(x, y);
+        points.forEach((p, i) => {
+            if (i < amount - 1) {
+                const toX = (p.x + points[i + 1].x) / 2;
+                const toY = (p.y + points[i + 1].y) / 2;
+                shape.quadraticCurveTo(p.x, p.y, toX, toY);
+            }
+            else
+                shape.quadraticCurveTo(p.x, p.y, x, y);
+        });
+        shape.endFill();
+    }
+
+    reset() {
+        if (this.tween) {
+            this.tween.kill();
+            this.clear();
+        }
+
+        const pos = Math.random() * 8;
+        const width = renderer.width;
+        const height = renderer.height;
+        const center = {
+            x: width / 2,
+            y: height / 2
+        };
+        const posX = pos % 4 == 0 ? center.x: (pos > 4 ? 0: width);
+        const posY = pos % 4 == 2 ? center.y: (pos > 2 && pos < 5 ? height: 0);
+        this.container.position.x = posX;
+        this.container.position.y = posY;
+
+        const radius = this.radius;
+        const impact = {
+            x: Math.random() * renderer.width,
+            y: Math.random() * renderer.height
+        };
+        const angleBetween = (v1, v2) => Math.atan2(v2.y - v1.y, v2.x - v1.x);
+
+        this.destinations = this.points.map(p => {
+            const theta = angleBetween(p, impact) - p.theta;
+            const distance = Math.sqrt(Math.pow(p.x - impact.x, 2) + Math.pow(p.y - impact.y, 2));
+            const d = 10 * radius / Math.sqrt(distance);
+            const x = d * Math.cos(theta) + p.x;
+            const y = d * Math.sin(theta) + p.y;
+            return {x, y};
+        });
+    }
+
+    clear() {
+        this.tween = undefined;
+        if (this.shape)
+            this.shape.clear();
     }
 }
 
