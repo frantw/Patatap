@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400&display=swap');
+
 body, html {
     position: absolute;
     padding: 0;
@@ -5,8 +7,33 @@ body, html {
     overflow: hidden;
     background: #b5b5b5;
     text-align: center;
+    font-family: 'Lato', sans-serif;
 }
 
 #view {
     z-index: 1;
+}
+
+#cover {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #333333;
+    opacity: 1.0;
+    transition: all 0.25s ease-in-out;
+}
+
+#cover.hidden {
+    opacity: 0.0;
+}
+
+.intro {
+    font-size: 1.4rem;
+    letter-spacing: 0.1rem;
+}
+
+.attention {
+    font-size: 1rem;
+    letter-spacing: 0.05rem;
 }
