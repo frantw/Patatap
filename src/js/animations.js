@@ -148,16 +148,15 @@ class clay {
 
         this.reset();
 
-        const options = {beginning: 0};
+        const options = {ending: 0};
         const points = this.points;
         const destinations = this.destinations;
 
         this.tween = TweenLite.to(options, 0.75, {
-            beginning: 1.0,
+            ending: 1.0,
             ease: Circ.easeOut,
-            onUpdate: function() {
-                // const t = this.totalTime() * 4 / 3;
-                const t = options.beginning;
+            onUpdate: () => {
+                const t = options.ending;
                 const current = destinations.map((d, i) => ({
                     x: lerp(points[i].x, d.x, t),
                     y: lerp(points[i].y, d.y, t)
@@ -334,8 +333,8 @@ class moon {
         this.tween = TweenLite.to(options, 0.5, {
             beginning: 1.0,
             ease: Sine.easeOut,
-            onUpdate: function() {
-                const t = this.totalTime() * 2;
+            onUpdate: () => {
+                const t = options.beginning;
                 for (let i = halfAmount; i < amount; i++)
                     current[i].y = lerp(current[i].y, destinations[i].y, t);
                 self.redraw(current);
@@ -347,8 +346,8 @@ class moon {
             self.tween = TweenLite.to(options, 0.5, {
                 ending: 1.0,
                 ease: Sine.easeOut,
-                onUpdate: function() {
-                    const t = this.totalTime() * 2;
+                onUpdate: () => {
+                    const t = options.ending;
                     for (let i = 0; i < halfAmount; i++)
                         current[i].y = lerp(current[i].y, -(destinations[i].y), t);
                     self.redraw(current);
@@ -467,8 +466,8 @@ class splits {
         this.tween = TweenLite.to(options, 0.5, {
             beginning: 1.0,
             ease: Circ.easeIn,
-            onUpdate: function() {
-                const t = this.totalTime() * 2;
+            onUpdate: () => {
+                const t = options.beginning;
                 shapeTop.visible = shapeBottom.visible = Math.random() < t;
             },
             onComplete: animationOut
@@ -479,8 +478,8 @@ class splits {
                 ending: 1.0,
                 ease: Circ.easeOut,
                 delay: 0.5,
-                onUpdate: function() {
-                    const t = this.totalTime() * 2;
+                onUpdate: () => {
+                    const t = options.ending;
                     shapeTop.y = lerp(shapeTop.y, - self.distance, t);
                     shapeBottom.y = lerp(shapeBottom.y, self.distance, t);
                     shapeTop.alpha = shapeBottom.alpha = 1 - t;
@@ -602,7 +601,7 @@ class timer {
         const options = {theta: direction? 0: twoPI * 2};
         this.tween = TweenLite.to(options, 0.66, {
             theta: direction? twoPI * 2: 0,
-            onUpdate: function() {
+            onUpdate: () => {
                 const theta = options.theta;
                 if (theta <= twoPI)
                     self.redraw(0, theta);
@@ -697,7 +696,7 @@ class corona {
         this.tween = TweenLite.to(options, 1.4, {
             theta: direction? twoPI * 2: 0,
             ease: Power3.easeInOut,
-            onUpdate: function() {
+            onUpdate: () => {
                 const theta = options.theta;
                 if (direction) {
                     if (theta <= twoPI)
@@ -819,8 +818,8 @@ class confetti {
         this.tween = TweenLite.to(options, 0.5, {
             ending: 1.0,
             ease: Sine.easeOut,
-            onUpdate: function() {
-                const t = this.totalTime() * 2;
+            onUpdate: () => {
+                const t = options.ending;
                 shapes.forEach((shape, idx) => {
                     const point = points[idx];
                     shape.x = lerp(shape.x, point.x, t);
@@ -910,8 +909,8 @@ class strike {
         this.tween = TweenLite.to(options, 0.25, {
             beginning: 1.0,
             ease: Circ.easeIn,
-            onUpdate: function() {
-                const t = this.totalTime() * 4;
+            onUpdate: () => {
+                const t = options.beginning;
                 const x = lerp(origin.x, destination.x, t);
                 const y = lerp(origin.y, destination.y, t);
                 self.redraw(origin, {x, y});
@@ -923,8 +922,8 @@ class strike {
             self.tween = TweenLite.to(options, 0.25, {
                 ending: 1.0,
                 ease: Circ.easeOut,
-                onUpdate: function() {
-                    const t = this.totalTime() * 4;
+                onUpdate: () => {
+                    const t = options.ending;
                     const x = lerp(origin.x, destination.x, t);
                     const y = lerp(origin.y, destination.y, t);
                     self.redraw({x, y}, destination);
@@ -1020,8 +1019,8 @@ class prism {
         this.tween = TweenLite.to(options, 0.75, {
             ending: 1.0,
             ease: Circ.easeIn,
-            onUpdate: function() {
-                const t = this.totalTime() / 0.75;
+            onUpdate: () => {
+                const t = options.ending;
                 self.scale(t * scalar);
             },
             onComplete: () => self.clear()
@@ -1072,8 +1071,8 @@ class squiggle {
         this.tween = TweenLite.to(options, 0.5, {
             beginning: 1.0,
             ease: Sine.easeOut,
-            onUpdate: function() {
-                const t = this.totalTime() * 2;
+            onUpdate: () => {
+                const t = options.beginning;
                 self.redraw(0.0, t);
             },
             onComplete: animationOut
@@ -1083,8 +1082,8 @@ class squiggle {
             self.tween = TweenLite.to(options, 0.5, {
                 ending: 1.0,
                 ease: Sine.easeIn,
-                onUpdate: function() {
-                    const t = this.totalTime() * 2;
+                onUpdate: () => {
+                    const t = options.ending;
                     self.redraw(t, 1.0);
                 },
                 onComplete: () => self.clear()
@@ -1201,8 +1200,8 @@ class pinwheel {
             self.tween = TweenLite.to(options, 0.1, {
                 ending: 1.0,
                 ease: Sine.easeOut,
-                onUpdate: function() {
-                    const t = this.totalTime() * 10;
+                onUpdate: () => {
+                    const t = options.ending;
                     self.shape.scale.x = 1 - t;
                     self.shape.scale.y = 1 - t;
                 },
@@ -1340,8 +1339,8 @@ class zigzag {
         this.tween = TweenLite.to(options, 0.25, {
             beginning: 1.0,
             ease: Sine.easeOut,
-            onUpdate: function() {
-                const t = this.totalTime() * 4;
+            onUpdate: () => {
+                const t = options.beginning;
                 self.redraw(0.0, t);
             },
             onComplete: animationOut
@@ -1351,8 +1350,8 @@ class zigzag {
             self.tween = TweenLite.to(options, 0.25, {
                 ending: 1.0,
                 ease: Sine.easeOut,
-                onUpdate: function() {
-                    const t = this.totalTime() * 4;
+                onUpdate: () => {
+                    const t = options.ending;
                     self.redraw(t, 1.0);
                 },
                 onComplete: () => self.clear()
@@ -1444,7 +1443,7 @@ class spiral {
             rotation: rotation + Math.PI / 8,
             scalar: Math.random() * 2 + 10,
             ease: Circ.easeIn,
-            onUpdate: function() {
+            onUpdate: () => {
                 const t = Math.min(lerp(0, self.resolution, options.beginning), 1);
                 self.rotation = options.rotation;
                 self.scalar = options.scalar;

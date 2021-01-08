@@ -13,7 +13,7 @@ const resetTimer = () => {
 };
 const toggleCover = (state) => document.getElementById('cover').classList[state ? 'remove': 'add']('hidden');
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener('keydown', function(e) {
     if (e.keyCode > 64 && e.keyCode < 91) {
         const key = e.key.toLowerCase();
         toggleCover(false);
