@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from './pixi-legacy.mjs';
-import { TweenLite, Expo, Circ, Sine, Power3} from "./gsap-core.js";
+import { TweenLite, Expo, Circ, Sine, Power3 } from "./gsap-core.js";
 
 const COLORS = {
     background: {r: 181, g: 181, b: 181, hex: 0xb5b5b5},
@@ -16,7 +16,22 @@ document.getElementById('view').appendChild(app.view);
 
 const renderer = app.renderer;
 const stage = app.stage;
-const duration = 1000;
+
+const background = {};
+const foreground = {};
+const getContainerByIndex = (ground, index) => ground.child[index];
+const generateContainer = (el, childAmount) => {
+    el.container = new Container();
+    el.child = [];
+    stage.addChild(el.container);
+    for (let i = 0; i < childAmount; i++) {
+        const container = new Container();
+        el.container.addChild(container);
+        el.child.unshift(container);
+    }
+};
+generateContainer(background, 3);
+generateContainer(foreground, 12);
 
 export default class Animations {
     constructor() {
@@ -82,6 +97,7 @@ export default class Animations {
 
 class flash {
     constructor({style}) { // style: black, white, accent
+        this.parent = getContainerByIndex(background, 0);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         const color = COLORS[style].hex;
@@ -111,19 +127,20 @@ class flash {
             this.clear();
 
         this.shape.visible = false;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         app.ticker.remove(this.animation);
         this.shape.visible = false;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
         this.animation = undefined;
     }
 }
 
 class clay {
     constructor() {
+        const parent = getContainerByIndex(background, 1);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
 
@@ -139,7 +156,7 @@ class clay {
             return {x, y, theta};
         });
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
@@ -234,6 +251,7 @@ class clay {
 
 class wipe {
     constructor({axis}) {
+        this.parent = getContainerByIndex(background, 2);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         const center = this.center = {x: renderer.width / 2, y: renderer.height / 2};
@@ -286,17 +304,18 @@ class wipe {
             this.shape.x = direction? (-renderer.width / 2): (renderer.width * 1.5);
         else
             this.shape.y = direction? (-renderer.height / 2): (renderer.height * 1.5);
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class moon {
     constructor() {
+        this.parent = getContainerByIndex(foreground, 5);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         this.color = COLORS.foreground.hex;
@@ -377,19 +396,20 @@ class moon {
         }));
         this.destinations = this.points.slice();
         this.shape.rotation = Math.random() * Math.PI * 2;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
         if (this.shape)
             this.shape.clear();
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class ufo {
     constructor() {
+        this.parent = getContainerByIndex(foreground, 6);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         const color = this.color = COLORS.accent.hex;
@@ -430,17 +450,18 @@ class ufo {
         shape.x = right ? (renderer.width * 0.75): (renderer.width * 0.25);
         shape.y = top ? (-renderer.height * 0.5): (renderer.height * 1.5);
         shape.scale.set(1.0);
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class splits {
     constructor() {
+        this.parent = getContainerByIndex(foreground, 5);
         const container = this.container = new Container();
         const shapeTop = this.shapeTop = new Graphics();
         const shapeBottom = this.shapeBottom = new Graphics();
@@ -499,12 +520,12 @@ class splits {
         this.shapeTop.y = 0.25;
         this.shapeBottom.y = -0.25;
         this.shapeTop.alpha = this.shapeBottom.alpha = 1;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 
     drawHalfCircle(shape, startAngle, endAngle) {
@@ -518,6 +539,7 @@ class splits {
 
 class piston {
     constructor({amount}) {
+        this.parent = getContainerByIndex(foreground, 10);
         const container = this.container = new Container();
         const shapes = this.shapes = [];
         const color = this.color = COLORS.white.hex;
@@ -573,17 +595,18 @@ class piston {
         const direction = this.direction = Math.random() > 0.5;
         const x = this.x = this.width + 1;
         this.mask.position.x = direction? x: -x;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class timer {
     constructor() {
+        this.parent = getContainerByIndex(foreground, 7);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
 
@@ -620,14 +643,14 @@ class timer {
 
         this.direction = Math.random() > 0.5;
         this.container.rotation = Math.random() * Math.PI * 2;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
         if (this.shape)
             this.shape.clear();
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 
     draw(startAngle, endAngle) {
@@ -649,6 +672,7 @@ class timer {
 
 class corona {
     constructor({style}) { // style: circle or triangle
+        const parent = this.parent = getContainerByIndex(foreground, 0);
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
@@ -673,7 +697,7 @@ class corona {
             shapes.push(shape);
             return {x, y, theta};
         });
-        stage.addChild(container);
+        parent.addChild(container);
     }
 
     play() {
@@ -728,7 +752,7 @@ class corona {
 
         this.direction = Math.random() > 0.5;
         this.container.rotation = Math.random() * Math.PI * 2;
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
@@ -736,7 +760,7 @@ class corona {
         if (this.current)
             this.current.clear();
         this.shapes[this.amount - 1].visible = false;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 
     drawCircle(graphic, x, y) {
@@ -782,6 +806,7 @@ class corona {
 
 class confetti {
     constructor({style}) { // style: simple or colorful
+        this.parent = getContainerByIndex(foreground, 8);
         const container = this.container = new Container();
         const shapes = this.shapes = [];
 
@@ -873,19 +898,20 @@ class confetti {
             shape.x = 0;
             shape.y = 0;
         });
-        stage.addChild(container);
+        this.parent.addChild(container);
     }
 
     clear() {
         this.tween = undefined;
         if (this.current)
             this.current.clear();
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class strike {
     constructor() {
+        const parent = getContainerByIndex(foreground, 4);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         this.color = COLORS.black.hex;
@@ -893,7 +919,7 @@ class strike {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
@@ -976,6 +1002,7 @@ class strike {
 
 class prism {
     constructor({style}) { // style: triangle, square or hexagon
+        this.parent = getContainerByIndex(foreground, 11);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
 
@@ -1034,12 +1061,12 @@ class prism {
         }
 
         this.scale(0);
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tween = undefined;
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 
     scale(s) {
@@ -1050,6 +1077,7 @@ class prism {
 
 class squiggle {
     constructor() {
+        const parent = this.parent = getContainerByIndex(foreground, 3);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         this.color = COLORS.accent.hex;
@@ -1057,7 +1085,7 @@ class squiggle {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
@@ -1147,6 +1175,7 @@ class squiggle {
 
 class pinwheel {
     constructor() {
+        const parent = getContainerByIndex(foreground, 2);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
 
@@ -1171,7 +1200,7 @@ class pinwheel {
             sequence.push(points);
         };
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
@@ -1241,6 +1270,7 @@ class pinwheel {
 
 class glimmer {
     constructor() {
+        this.parent = getContainerByIndex(foreground, 1);
         const container = this.container = new Container();
 
         container.position.x = renderer.width / 2;
@@ -1306,18 +1336,19 @@ class glimmer {
             point.scale = 0;
         });
 
-        stage.addChild(this.container);
+        this.parent.addChild(this.container);
     }
 
     clear() {
         this.tweens = undefined;
         this.points.forEach(p => p.shape.visible = false);
-        stage.removeChild(this.container);
+        this.parent.removeChild(this.container);
     }
 }
 
 class zigzag {
     constructor() {
+        const parent = getContainerByIndex(foreground, 4);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         this.color = COLORS.black.hex;
@@ -1325,7 +1356,7 @@ class zigzag {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
@@ -1417,6 +1448,7 @@ class zigzag {
 
 class spiral {
     constructor() {
+        const parent = getContainerByIndex(foreground, 9);
         const container = this.container = new Container();
         const shape = this.shape = new Graphics();
         this.color = COLORS.black.hex;
@@ -1424,7 +1456,7 @@ class spiral {
         container.position.x = renderer.width / 2;
         container.position.y = renderer.height / 2;
 
-        stage.addChild(container);
+        parent.addChild(container);
         container.addChild(shape);
     }
 
