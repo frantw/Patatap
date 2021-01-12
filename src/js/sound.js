@@ -36,7 +36,7 @@ export default class Sound {
         this.loaded = 0;
         this.decodeHandle = decodeHandle;
         SOUNDS.forEach(s => {
-            this.load(`../src/assets/sounds/${s.filename}.mp3`, s.key)
+            this.load(`./src/assets/sounds/${s.filename}.mp3`, s.key)
         });
     }
 
