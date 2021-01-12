@@ -1,7 +1,7 @@
 import Sound from './sound.js';
 import Animations from './animations.js';
 
-const sound = new Sound();
+const sound = new Sound(decodeHandle);
 const animations = new Animations();
 
 const sec = 3000;
@@ -23,7 +23,12 @@ window.addEventListener('keydown', function(e) {
     }
 });
 
-window.addEventListener('load', function(e) {
-    toggleCover(true);
-    resetTimer();
-});
+function decodeHandle(amount) {
+    const total = 26;
+    document.getElementById('progress').innerHTML = `${amount} / ${total}`;
+    if (amount == total) {
+        document.getElementById('loading').classList.add('hidden');
+        toggleCover(true);
+        resetTimer();
+    }
+}

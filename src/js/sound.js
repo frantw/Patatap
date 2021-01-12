@@ -28,12 +28,13 @@ const SOUNDS = [
 ];
 
 export default class Sound {
-    constructor() {
+    constructor(decodeHandle) {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.source = null;
         this.buffer = {};
 
         this.loaded = 0;
+        this.decodeHandle = decodeHandle;
         SOUNDS.forEach(s => {
             this.load(`../src/assets/sounds/${s.filename}.mp3`, s.key)
         });
@@ -42,7 +43,7 @@ export default class Sound {
     decode(arrayBuffer, key) {
         this.ctx.decodeAudioData(arrayBuffer, (buffer) => {
             this.buffer[key] = buffer;
-            this.loaded ++;
+            this.decodeHandle(++this.loaded);
         }, () => {
             console.log('Error decoding');
         });
