@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from './pixi-legacy.mjs';
+import { Application, Container, Graphics } from './pixi.mjs';
 import { TweenLite, Expo, Circ, Sine, Power3 } from "./gsap-core.js";
 
 const COLORS = {
@@ -11,7 +11,7 @@ const COLORS = {
     black: {r: 0, g: 0, b: 0, hex: 0x000000}
 };
 
-const app = new Application();
+const app = new Application({antialias: true});
 document.getElementById('view').appendChild(app.view);
 
 const renderer = app.renderer;
@@ -361,7 +361,7 @@ class moon {
         function animationOut(){
             self.tween = TweenLite.to(options, 0.5, {
                 ending: 1.0,
-                ease: Sine.easeOut,
+                ease: Sine.easeIn,
                 onUpdate: () => {
                     const t = options.ending;
                     for (let i = 0; i < halfAmount; i++)
