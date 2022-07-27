@@ -5,7 +5,7 @@ My version of Patatap - animation and sound kit.
 
 In simple words, the keyboards of your PC, from A to Z, can compose live real musical animations.
 
-[demo](https://keepfa1th.github.io/Patatap/) / [source](https://github.com/keepfa1th/Patatap)
+[demo](https://frantw.github.io/Patatap/) / [source](https://github.com/frantw/Patatap)
 
 ### Built With
 
